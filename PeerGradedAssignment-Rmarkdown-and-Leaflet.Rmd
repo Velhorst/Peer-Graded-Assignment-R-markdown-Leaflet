@@ -1,0 +1,99 @@
+---
+title: 'Peer Graded Assignment: R markdown and Leaflet'
+author: "RLC Velhorst"
+date: "12-5-2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(dplyr)
+set.seed(101)
+```
+
+# Developing Data Products Assignment Week 2: Tide Stations
+
+This document is the report of the Peer Assessment project of week 2 from Coursera’s course Developing Data Products, as part of the Specialization in Data Science by John Hopkins University. It was built in RStudio, using its knitr functions. 
+
+## Project Goal
+
+The goal of your project is to demonstrate the student's capabilities of using R markdown and Leaflet. Using a R makrdown file, a HTML-file is built. The package Leaflet is used to create an interactive map in this HTML-file.  
+
+The specific data in this exercise shows the location of worldwide tide stations.
+
+## Data: Tide Station
+
+The data used for this assignment originates from the Permanent Service for Mean Sea Level (PSMSL).
+PSMSL is the global data bank for long term sea level change information from tide gauges and bottom pressure recorders.
+
+This doument shows the location of all stations which are stored in de publicly available data: tide gauge data [Holgate et al., 2013; PSMSL, 2020].
+
+```{r}
+
+# data directory
+datadir <- "./data"
+if(!file.exists(datadir)){dir.create(datadir)}
+
+# download zipped data
+zipf = file.path(datadir, "rlr_annual.zip")
+if(!file.exists(zipf)){
+  fileUrl <- "https://www.psmsl.org/data/obtaining/year_end/2019/rlr_annual.zip"
+  download.file(fileUrl,destfile = zipf)
+  unzip(zipf,exdir="./data")
+}
+
+# file containing tide stations locations
+fn_data <- "rlr_annual/filelist.txt"
+dataf <-file.path(datadir, fn_data)
+
+# station data
+stations <- read.table(dataf, sep = ";",
+                       col.names = c('id', 'lat', 'lon', 'name', 'coastline_code', 'station_code', 'quality'),
+                       strip.white = TRUE
+                       )
+
+head(stations)
+```
+
+## Interactive map
+
+```{r}
+
+# Map stations,  Color by quality flag, 
+# give station name on click,  start view around North Sea  and cluster stations
+
+
+# Color by quality flag
+getColor <- function(stations) {
+  sapply(stations$quality, function(quality) {
+  if(quality == 'N') {
+    "green"
+  } else {
+    "red"
+  } })
+}
+
+# Create icons using color
+icons <- awesomeIcons(
+  icon = 'none',
+  markerColor = getColor(stations)
+)
+
+
+# Map stations
+stations %>% 
+  leaflet() %>% 
+  setView(2, 54, zoom = 5) %>% # start view around North Sea
+  addTiles() %>%
+  addAwesomeMarkers(~lon, ~lat, icon=icons,
+                    popup =stations$name, # give station name on click
+                    clusterOptions = markerClusterOptions(maxClusterRadius = 25))
+
+
+
+```
+
+## Date: 12-5-2020
+
+
